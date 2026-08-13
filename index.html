@@ -259,46 +259,94 @@
   const ID_THEME    = "c71cf879-cfd5-40a8-a6f4-7fc509d3fa4d";
   const ID_SOCIALS  = "-NDrs33sSgLrqXCDcRLM";
 
-  async function toggle(key, apiUrl, id) {
+  const OVERLAYS = [
+    { key: 'Theme',    api: API_THEME,    id: ID_THEME },
+    { key: 'Socials',  api: API_SOCIALS,  id: ID_SOCIALS },
+    { key: 'LiveS',    api: API_LIVES,    id: null },
+    { key: 'Annonces', api: API_ANNONCES, id: null }
+  ];
+
+  function applyState(key, isOn) {
     const btn = document.getElementById('btn' + key);
     const ind = document.getElementById('ind' + key);
     const card = document.getElementById('card' + key);
 
-    btn.disabled = true;
     btn.classList.remove('err');
-    ind.classList.remove('err');
-    ind.classList.add('pending');
+    ind.classList.remove('err', 'pending');
+    btn.classList.toggle('on', isOn);
+    ind.classList.toggle('on', isOn);
+    card.classList.toggle('active', isOn);
+    btn.textContent = isOn ? 'ON' : 'OFF';
+  }
 
-    const payload = id ? { command: "ToggleOverlay", id: id } : { command: "ToggleOverlay" };
+  function applyError(key) {
+    const btn = document.getElementById('btn' + key);
+    const ind = document.getElementById('ind' + key);
+    ind.classList.remove('pending');
+    btn.classList.add('err');
+    ind.classList.add('err');
+    btn.textContent = 'ERROR';
+  }
+
+  async function sendCommand(apiUrl, id, command) {
+    const body = id ? { command, id } : { command };
+    const res = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('bad status ' + res.status);
+    try {
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function toggle(key, apiUrl, id) {
+    const btn = document.getElementById('btn' + key);
+    const ind = document.getElementById('ind' + key);
+
+    // Optimistic flip — update UI immediately so it feels instant
+    const currentlyOn = btn.classList.contains('on');
+    const optimisticOn = !currentlyOn;
+    applyState(key, optimisticOn);
+    ind.classList.add('pending');
+    btn.disabled = true;
 
     try {
-      const res = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      ind.classList.remove('pending');
-
-      if (res.ok) {
-        const isOn = btn.classList.toggle('on');
-        ind.classList.toggle('on', isOn);
-        card.classList.toggle('active', isOn);
-        btn.textContent = isOn ? 'ON' : 'OFF';
+      const data = await sendCommand(apiUrl, id, 'ToggleOverlay');
+      // uno responds with { status, result, payload: true/false } showing the new visibility
+      if (data && typeof data.payload === 'boolean') {
+        applyState(key, data.payload); // correct if optimistic guess was wrong
       } else {
-        btn.classList.add('err');
-        ind.classList.add('err');
-        btn.textContent = 'ERROR';
+        ind.classList.remove('pending');
       }
     } catch (err) {
-      ind.classList.remove('pending');
-      btn.classList.add('err');
-      ind.classList.add('err');
-      btn.textContent = 'ERROR';
+      applyState(key, currentlyOn); // revert optimistic flip on failure
+      applyError(key);
     } finally {
       btn.disabled = false;
     }
   }
+
+  async function syncOne(key, apiUrl, id) {
+    try {
+      const data = await sendCommand(apiUrl, id, 'GetOverlayVisibility');
+      if (data && typeof data.payload === 'boolean') {
+        applyState(key, data.payload);
+      }
+    } catch (err) {
+      // silent fail on background sync; don't flag as error to avoid noisy UI
+    }
+  }
+
+  async function syncAll() {
+    await Promise.all(OVERLAYS.map(o => syncOne(o.key, o.api, o.id)));
+  }
+
+  syncAll();
+  setInterval(syncAll, 5000);
 </script>
 
 </body>
