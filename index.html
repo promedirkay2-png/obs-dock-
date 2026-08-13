@@ -148,43 +148,37 @@
   .state-text.on { color: var(--on); }
   .state-text.err { color: #fb923c; }
 
-  .switch {
-    position: relative;
-    width: 36px;
-    height: 20px;
-    border-radius: 999px;
+  .action-btn {
+    width: 100%;
     border: none;
-    background: var(--off-dim);
+    border-radius: 8px;
+    padding: 8px 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--off);
     cursor: pointer;
-    padding: 0;
-    transition: background 0.25s ease;
-    flex-shrink: 0;
+    transition: background 0.2s ease, transform 0.08s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(244,63,94,0.25);
   }
-  .switch.on {
-    background: var(--on-dim);
+  .action-btn.on {
+    background: var(--on);
+    color: #052e1e;
+    box-shadow: 0 2px 8px rgba(52,211,153,0.3);
   }
-  .switch:disabled {
+  .action-btn:active {
+    transform: scale(0.96);
+  }
+  .action-btn:disabled {
     opacity: 0.6;
     cursor: wait;
   }
-
-  .knob {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--off);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-    transition: transform 0.25s cubic-bezier(.4,0,.2,1), background 0.25s ease;
-  }
-  .switch.on .knob {
-    transform: translateX(16px);
-    background: var(--on);
-  }
-  .switch.err .knob {
+  .action-btn.err {
     background: #fb923c;
+    color: #2b1502;
+    box-shadow: 0 2px 8px rgba(251,146,60,0.3);
   }
 </style>
 </head>
@@ -202,12 +196,7 @@
           <span class="label">Theme</span>
           <span class="indicator" id="indTheme"></span>
         </div>
-        <div class="card-bottom">
-          <span class="state-text" id="stateTheme">OFF</span>
-          <button class="switch" id="btnTheme" onclick="toggle('Theme', API_THEME, ID_THEME)">
-            <span class="knob"></span>
-          </button>
-        </div>
+        <button class="action-btn" id="btnTheme" onclick="toggle('Theme', API_THEME, ID_THEME)">OFF</button>
       </div>
 
       <div class="card" id="cardSocials">
@@ -215,12 +204,7 @@
           <span class="label">Socials</span>
           <span class="indicator" id="indSocials"></span>
         </div>
-        <div class="card-bottom">
-          <span class="state-text" id="stateSocials">OFF</span>
-          <button class="switch" id="btnSocials" onclick="toggle('Socials', API_SOCIALS, ID_SOCIALS)">
-            <span class="knob"></span>
-          </button>
-        </div>
+        <button class="action-btn" id="btnSocials" onclick="toggle('Socials', API_SOCIALS, ID_SOCIALS)">OFF</button>
       </div>
 
       <div class="card" id="cardLiveS">
@@ -228,12 +212,7 @@
           <span class="label">Live(S)</span>
           <span class="indicator" id="indLiveS"></span>
         </div>
-        <div class="card-bottom">
-          <span class="state-text" id="stateLiveS">OFF</span>
-          <button class="switch" id="btnLiveS" onclick="toggle('LiveS', API_LIVES, null)">
-            <span class="knob"></span>
-          </button>
-        </div>
+        <button class="action-btn" id="btnLiveS" onclick="toggle('LiveS', API_LIVES, null)">OFF</button>
       </div>
 
       <div class="card" id="cardAnnonces">
@@ -241,12 +220,7 @@
           <span class="label">Annonces(S)</span>
           <span class="indicator" id="indAnnonces"></span>
         </div>
-        <div class="card-bottom">
-          <span class="state-text" id="stateAnnonces">OFF</span>
-          <button class="switch" id="btnAnnonces" onclick="toggle('Annonces', API_ANNONCES, null)">
-            <span class="knob"></span>
-          </button>
-        </div>
+        <button class="action-btn" id="btnAnnonces" onclick="toggle('Annonces', API_ANNONCES, null)">OFF</button>
       </div>
     </div>
   </div>
@@ -262,7 +236,6 @@
 
   async function toggle(key, apiUrl, id) {
     const btn = document.getElementById('btn' + key);
-    const state = document.getElementById('state' + key);
     const ind = document.getElementById('ind' + key);
     const card = document.getElementById('card' + key);
 
@@ -286,23 +259,17 @@
         const isOn = btn.classList.toggle('on');
         ind.classList.toggle('on', isOn);
         card.classList.toggle('active', isOn);
-        state.textContent = isOn ? 'ON' : 'OFF';
-        state.classList.toggle('on', isOn);
-        state.classList.remove('err');
+        btn.textContent = isOn ? 'ON' : 'OFF';
       } else {
         btn.classList.add('err');
         ind.classList.add('err');
-        state.textContent = 'ERROR';
-        state.classList.add('err');
-        state.classList.remove('on');
+        btn.textContent = 'ERROR';
       }
     } catch (err) {
       ind.classList.remove('pending');
       btn.classList.add('err');
       ind.classList.add('err');
-      state.textContent = 'ERROR';
-      state.classList.add('err');
-      state.classList.remove('on');
+      btn.textContent = 'ERROR';
     } finally {
       btn.disabled = false;
     }
