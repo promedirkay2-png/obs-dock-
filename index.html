@@ -2,14 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Overlay Remotes</title>
+<title>Overlay Control</title>
 <style>
   :root {
-    --bg: #0b0b0f;
-    --on: #2ee6a6;
-    --off: #ff4d5e;
-    --text: #f5f5f7;
-    --muted: #8a8a94;
+    --bg: #0d0d11;
+    --card: #16161c;
+    --card-hover: #1c1c24;
+    --border: #262630;
+    --on: #34d399;
+    --on-dim: rgba(52,211,153,0.14);
+    --off: #f43f5e;
+    --off-dim: rgba(244,63,94,0.12);
+    --text: #f2f2f5;
+    --muted: #6b6b78;
+    --accent: #6366f1;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -22,74 +28,250 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 8px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    flex-wrap: wrap;
+    padding: 12px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-  .item {
+
+  .panel {
+    width: 100%;
+    max-width: 300px;
+    background: linear-gradient(180deg, #131318, #0f0f13);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  .header {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 3px;
+    justify-content: space-between;
+    padding: 2px 4px 10px 4px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
   }
-  .label {
-    font-size: 9px;
+  .header-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
     color: var(--muted);
-    letter-spacing: 0.5px;
     text-transform: uppercase;
   }
-  .toggle {
-    width: 64px;
-    height: 32px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: #fff;
-    background: var(--off);
-    transition: background 0.2s ease, transform 0.08s ease;
+  .header-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
   }
-  .toggle.on { background: var(--on); color: #06231a; }
-  .toggle:active { transform: scale(0.93); }
-  .toggle:disabled { opacity: 0.6; cursor: wait; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .card:hover {
+    background: var(--card-hover);
+  }
+  .card.active {
+    border-color: rgba(52,211,153,0.35);
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--off);
+    box-shadow: 0 0 8px rgba(244,63,94,0.6);
+    flex-shrink: 0;
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+  }
+  .indicator.on {
+    background: var(--on);
+    box-shadow: 0 0 8px rgba(52,211,153,0.65);
+  }
+  .indicator.pending {
+    background: #fbbf24;
+    box-shadow: 0 0 8px rgba(251,191,36,0.6);
+    animation: blink 0.7s ease-in-out infinite;
+  }
+  .indicator.err {
+    background: #fb923c;
+    box-shadow: 0 0 8px rgba(251,146,60,0.6);
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  .card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .state-text {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .state-text.on { color: var(--on); }
+  .state-text.err { color: #fb923c; }
+
+  .switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    border: none;
+    background: var(--off-dim);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.25s ease;
+    flex-shrink: 0;
+  }
+  .switch.on {
+    background: var(--on-dim);
+  }
+  .switch:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--off);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1), background 0.25s ease;
+  }
+  .switch.on .knob {
+    transform: translateX(16px);
+    background: var(--on);
+  }
+  .switch.err .knob {
+    background: #fb923c;
+  }
 </style>
 </head>
 <body>
 
-  <div class="item">
-    <span class="label">Overlay 1</span>
-    <button class="toggle" id="btn1" onclick="toggle('btn1', API_1)">OFF</button>
-  </div>
+  <div class="panel">
+    <div class="header">
+      <span class="header-title">Overlay Control</span>
+      <span class="header-dot"></span>
+    </div>
 
-  <div class="item">
-    <span class="label">Overlay 2</span>
-    <button class="toggle" id="btn2" onclick="toggle('btn2', API_2)">OFF</button>
+    <div class="grid">
+      <div class="card" id="cardTheme">
+        <div class="card-top">
+          <span class="label">Theme</span>
+          <span class="indicator" id="indTheme"></span>
+        </div>
+        <div class="card-bottom">
+          <span class="state-text" id="stateTheme">OFF</span>
+          <button class="switch" id="btnTheme" onclick="toggle('Theme', API_THEME, ID_THEME)">
+            <span class="knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="cardSocials">
+        <div class="card-top">
+          <span class="label">Socials</span>
+          <span class="indicator" id="indSocials"></span>
+        </div>
+        <div class="card-bottom">
+          <span class="state-text" id="stateSocials">OFF</span>
+          <button class="switch" id="btnSocials" onclick="toggle('Socials', API_SOCIALS, ID_SOCIALS)">
+            <span class="knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="cardLiveS">
+        <div class="card-top">
+          <span class="label">Live(S)</span>
+          <span class="indicator" id="indLiveS"></span>
+        </div>
+        <div class="card-bottom">
+          <span class="state-text" id="stateLiveS">OFF</span>
+          <button class="switch" id="btnLiveS" onclick="toggle('LiveS', API_LIVES, null)">
+            <span class="knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="cardAnnonces">
+        <div class="card-top">
+          <span class="label">Annonces(S)</span>
+          <span class="indicator" id="indAnnonces"></span>
+        </div>
+        <div class="card-bottom">
+          <span class="state-text" id="stateAnnonces">OFF</span>
+          <button class="switch" id="btnAnnonces" onclick="toggle('Annonces', API_ANNONCES, null)">
+            <span class="knob"></span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
 <script>
-  const API_1 = "https://app.overlays.uno/apiv2/controlapps/6uPYOUrzy6uguIjvNNRVXy/api";
-  const API_2 = "https://app.overlays.uno/apiv2/controlapps/4CEcCF7j5COC29SuTbBi8e/api";
+  const API_THEME    = "https://app.overlays.uno/apiv2/controlapps/5VvVivOS2BmgqItxrtBznW/api";
+  const API_SOCIALS  = "https://app.overlays.uno/apiv2/controlapps/2soOs2QoVNVk6a7kmEWp8Z/api";
+  const API_LIVES    = "https://app.overlays.uno/apiv2/controlapps/3SrKbuFAUwKzwJqR834sFN/api";
+  const API_ANNONCES = "https://app.overlays.uno/apiv2/controlapps/4adMqyhchYhOgNLKaDy1Ax/api";
 
-  // Real overlay instance ID for Overlay 1 (from its ShowOverlay example).
-  // Overlay 2's real ID is unknown yet — using a placeholder until you send it.
-  const ID_1 = "c71cf879-cfd5-40a8-a6f4-7fc509d3fa4d";
-  const ID_2 = "360ced6c-a9d4-4c60-b57f-dd619364bb31";
+  const ID_THEME    = "c71cf879-cfd5-40a8-a6f4-7fc509d3fa4d";
+  const ID_SOCIALS  = "-NDrs33sSgLrqXCDcRLM";
 
-  async function toggle(btnId, apiUrl) {
-    const btn = document.getElementById(btnId);
+  async function toggle(key, apiUrl, id) {
+    const btn = document.getElementById('btn' + key);
+    const state = document.getElementById('state' + key);
+    const ind = document.getElementById('ind' + key);
+    const card = document.getElementById('card' + key);
+
     btn.disabled = true;
-    const realId = btnId === 'btn1' ? ID_1 : ID_2;
+    btn.classList.remove('err');
+    ind.classList.remove('err');
+    ind.classList.add('pending');
 
-    if (!realId) {
-      btn.textContent = 'NO ID';
-      btn.disabled = false;
-      return;
-    }
-
-    const payload = { command: "ToggleOverlay", id: realId };
+    const payload = id ? { command: "ToggleOverlay", id: id } : { command: "ToggleOverlay" };
 
     try {
       const res = await fetch(apiUrl, {
@@ -97,14 +279,30 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      ind.classList.remove('pending');
+
       if (res.ok) {
         const isOn = btn.classList.toggle('on');
-        btn.textContent = isOn ? 'ON' : 'OFF';
+        ind.classList.toggle('on', isOn);
+        card.classList.toggle('active', isOn);
+        state.textContent = isOn ? 'ON' : 'OFF';
+        state.classList.toggle('on', isOn);
+        state.classList.remove('err');
       } else {
-        btn.textContent = 'ERR';
+        btn.classList.add('err');
+        ind.classList.add('err');
+        state.textContent = 'ERROR';
+        state.classList.add('err');
+        state.classList.remove('on');
       }
     } catch (err) {
-      btn.textContent = 'ERR';
+      ind.classList.remove('pending');
+      btn.classList.add('err');
+      ind.classList.add('err');
+      state.textContent = 'ERROR';
+      state.classList.add('err');
+      state.classList.remove('on');
     } finally {
       btn.disabled = false;
     }
